@@ -67,11 +67,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_nested_command_with_global_arguments_at_any_depth() {
+    fn parses_device_info_with_global_arguments_at_any_depth() {
         let cli = Cli::try_parse_from([
             "pyrionctl",
             "device",
-            "connect",
+            "info",
             "--connection",
             "serial::/dev/test",
             "--output",
@@ -93,5 +93,20 @@ mod tests {
             Cli::try_parse_from(["pyrionctl", "--timeout", "0", "devices", "list"]).unwrap_err();
 
         assert_eq!(error.kind(), clap::error::ErrorKind::ValueValidation);
+    }
+
+    #[test]
+    fn parses_fault_clear_command_with_connection() {
+        let cli = Cli::try_parse_from([
+            "pyrionctl",
+            "faults",
+            "clear-resolved",
+            "--connection",
+            "serial::/dev/test",
+        ])
+        .unwrap();
+
+        let (_, _, command) = cli.into_parts();
+        assert!(matches!(command, Command::Faults(_)));
     }
 }

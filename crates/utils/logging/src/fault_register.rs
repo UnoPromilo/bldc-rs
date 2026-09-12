@@ -13,7 +13,9 @@ pub enum FaultState {
 #[derive(Sequence, Clone, Copy, Debug, PartialEq)]
 pub enum FaultType {
     Encoder,
-    // add more later
+    AdcTimeout,
+    InvalidMeasurement,
+    InvalidControllerOutput,
 }
 
 pub struct FaultRegister {
@@ -46,7 +48,7 @@ impl Default for FaultRegister {
 impl FaultRegister {
     const fn new() -> Self {
         Self {
-            cells: [AtomicU8::new(FaultState::Clean as u8); FaultType::CARDINALITY],
+            cells: [const { AtomicU8::new(FaultState::Clean as u8) }; FaultType::CARDINALITY],
             active_count: AtomicUsize::new(0),
             resolved_count: AtomicUsize::new(0),
         }
@@ -55,10 +57,6 @@ impl FaultRegister {
     pub fn shared() -> &'static Self {
         static ERROR_REGISTER: FaultRegister = FaultRegister::new();
         &ERROR_REGISTER
-    }
-
-    fn store(&self, e: FaultType, v: FaultState) {
-        self.cells[idx(e)].store(v as u8, Ordering::SeqCst);
     }
 
     pub fn load(&self, e: FaultType) -> FaultState {
@@ -95,12 +93,35 @@ impl FaultRegister {
         }
     }
 
-    pub fn reset(&self) {
-        for e in all::<FaultType>() {
-            self.store(e, FaultState::Clean);
+    pub fn latch(&self, e: FaultType) {
+        let previous = self.cells[idx(e)].swap(FaultState::Latched as u8, Ordering::SeqCst);
+
+        match previous.into() {
+            FaultState::Clean => {
+                self.resolved_count.fetch_add(1, Ordering::SeqCst);
+            }
+            FaultState::Active => {
+                self.active_count.fetch_sub(1, Ordering::SeqCst);
+                self.resolved_count.fetch_add(1, Ordering::SeqCst);
+            }
+            FaultState::Latched => {}
         }
-        self.active_count.store(0, Ordering::SeqCst);
-        self.resolved_count.store(0, Ordering::SeqCst);
+    }
+
+    pub fn clear_latched(&self) {
+        for e in all::<FaultType>() {
+            if self.cells[idx(e)]
+                .compare_exchange(
+                    FaultState::Latched as u8,
+                    FaultState::Clean as u8,
+                    Ordering::SeqCst,
+                    Ordering::SeqCst,
+                )
+                .is_ok()
+            {
+                self.resolved_count.fetch_sub(1, Ordering::SeqCst);
+            }
+        }
     }
 
     pub fn active_count(&self) -> usize {
@@ -184,13 +205,13 @@ mod tests {
     }
 
     #[test]
-    fn reset_should_clear_all_faults() {
+    fn clear_latched_should_clear_resolved_faults() {
         let reg = fresh_register();
 
         reg.set(FaultType::Encoder);
         reg.resolve_if_set(FaultType::Encoder);
 
-        reg.reset();
+        reg.clear_latched();
 
         assert_eq!(reg.load(FaultType::Encoder), FaultState::Clean);
 
@@ -264,7 +285,15 @@ mod tests {
 
         reg.set(FaultType::Encoder);
 
-        assert_eq!(reg.snapshot(), [FaultState::Active]);
+        assert_eq!(
+            reg.snapshot(),
+            [
+                FaultState::Active,
+                FaultState::Clean,
+                FaultState::Clean,
+                FaultState::Clean
+            ]
+        );
     }
 
     #[test]
@@ -274,17 +303,25 @@ mod tests {
         reg.set(FaultType::Encoder);
         reg.resolve_if_set(FaultType::Encoder);
 
-        assert_eq!(reg.snapshot(), [FaultState::Latched]);
+        assert_eq!(
+            reg.snapshot(),
+            [
+                FaultState::Latched,
+                FaultState::Clean,
+                FaultState::Clean,
+                FaultState::Clean
+            ]
+        );
     }
 
     #[test]
-    fn snapshot_should_reflect_reset() {
+    fn snapshot_should_reflect_cleared_latched_faults() {
         let reg = fresh_register();
 
-        reg.set(FaultType::Encoder);
-        reg.reset();
+        reg.latch(FaultType::Encoder);
+        reg.clear_latched();
 
-        assert_eq!(reg.snapshot(), [FaultState::Clean]);
+        assert_eq!(reg.snapshot(), [FaultState::Clean; FaultType::CARDINALITY]);
     }
 
     #[test]
@@ -331,15 +368,37 @@ mod tests {
     }
 
     #[test]
-    fn reset_should_clear_counters() {
+    fn clear_latched_should_clear_latched_counter() {
         let reg = fresh_register();
 
         reg.set(FaultType::Encoder);
         reg.resolve_if_set(FaultType::Encoder);
 
-        reg.reset();
+        reg.clear_latched();
 
         assert_eq!(reg.active_count(), 0);
         assert_eq!(reg.latched_count(), 0);
+    }
+
+    #[test]
+    fn latch_should_mark_clean_fault_as_latched() {
+        let reg = fresh_register();
+
+        reg.latch(FaultType::AdcTimeout);
+
+        assert_eq!(reg.load(FaultType::AdcTimeout), FaultState::Latched);
+        assert_eq!(reg.active_count(), 0);
+        assert_eq!(reg.latched_count(), 1);
+    }
+
+    #[test]
+    fn clear_latched_should_not_clear_active_faults() {
+        let reg = fresh_register();
+        reg.set(FaultType::Encoder);
+
+        reg.clear_latched();
+
+        assert_eq!(reg.load(FaultType::Encoder), FaultState::Active);
+        assert_eq!(reg.active_count(), 1);
     }
 }

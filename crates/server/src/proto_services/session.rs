@@ -225,6 +225,15 @@ fn map_event_to_proto(event: Event) -> DeviceMessage {
                                 fault_register::FaultType::Encoder => {
                                     device_message::FaultType::Encoder
                                 }
+                                fault_register::FaultType::AdcTimeout => {
+                                    device_message::FaultType::AdcTimeout
+                                }
+                                fault_register::FaultType::InvalidMeasurement => {
+                                    device_message::FaultType::InvalidMeasurement
+                                }
+                                fault_register::FaultType::InvalidControllerOutput => {
+                                    device_message::FaultType::InvalidControllerOutput
+                                }
                             };
 
                             match value {
@@ -293,4 +302,40 @@ fn map_uid_to_uuid(uid: &[u8]) -> Uuid {
 enum CommandMappingError {
     NoPayload,
     InvalidPayload,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use enum_iterator::Sequence;
+
+    #[test]
+    fn every_firmware_fault_maps_to_a_named_grpc_fault() {
+        let message = map_event_to_proto(Event::FaultRegister(transport::event::FaultRegister {
+            cells: [fault_register::FaultState::Active; fault_register::FaultType::CARDINALITY],
+        }));
+        let DeviceMessagePayload::FaultRegister(register) = message.payload.unwrap() else {
+            panic!("expected fault register");
+        };
+
+        let types: Vec<i32> = register
+            .faults
+            .into_iter()
+            .map(|fault| fault.r#type)
+            .collect();
+        assert_eq!(
+            types,
+            [
+                device_message::FaultType::Encoder as i32,
+                device_message::FaultType::AdcTimeout as i32,
+                device_message::FaultType::InvalidMeasurement as i32,
+                device_message::FaultType::InvalidControllerOutput as i32,
+            ]
+        );
+        assert!(
+            types
+                .iter()
+                .all(|fault| *fault != device_message::FaultType::Unspecified as i32)
+        );
+    }
 }

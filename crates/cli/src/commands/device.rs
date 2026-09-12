@@ -2,6 +2,7 @@ use clap::{Args, Subcommand};
 
 use crate::client::ClientError;
 use crate::commands::CommandContext;
+use crate::commands::connection::ConnectionArgs;
 
 #[derive(Debug, Args)]
 pub(crate) struct DeviceArgs {
@@ -11,24 +12,19 @@ pub(crate) struct DeviceArgs {
 
 #[derive(Debug, Subcommand)]
 enum DeviceCommand {
-    Connect(ConnectArgs),
-}
-
-#[derive(Debug, Args)]
-struct ConnectArgs {
-    #[arg(long, env = "PYRION_CONNECTION_STRING", hide_env_values = true)]
-    connection: Option<String>,
+    /// Read device identity through a short-lived gRPC session.
+    Info(ConnectionArgs),
 }
 
 impl DeviceArgs {
     pub(crate) async fn execute(self, context: &CommandContext) -> Result<(), ClientError> {
         match self.command {
-            DeviceCommand::Connect(arguments) => connect(context, arguments).await,
+            DeviceCommand::Info(arguments) => info(context, arguments).await,
         }
     }
 }
 
-async fn connect(context: &CommandContext, arguments: ConnectArgs) -> Result<(), ClientError> {
+async fn info(context: &CommandContext, arguments: ConnectionArgs) -> Result<(), ClientError> {
     let result = context
         .client
         .connect_and_identify(arguments.connection.as_deref())
@@ -39,9 +35,8 @@ async fn connect(context: &CommandContext, arguments: ConnectArgs) -> Result<(),
     }
 
     println!(
-        "Connected to {}: firmware {}, UID {}",
+        "{}\tfirmware {}\tUID {}",
         result.connection_string, result.firmware, result.uid
     );
-    println!("Disconnected.");
     Ok(())
 }

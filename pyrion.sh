@@ -76,9 +76,22 @@ Commands:
                       Targets: bootloader, firmware (default).
   dfu                 Flash firmware using usb-dfu (dfu-util).
   server              Run the server crate in release mode
+  pyrionctl [ARGS...] Run pyrionctl; all remaining arguments are forwarded
   logs                Attach to firmware logs using probe-rs
   help, -h, --help    Print this help message
 EOF
+}
+
+do_pyrionctl() {
+    if ! command -v cargo &> /dev/null; then
+        error "'cargo' is not installed."
+    fi
+
+    if [[ $# -eq 0 ]]; then
+        set -- --help
+    fi
+
+    exec cargo run --quiet -p pyrion-cli -- "$@"
 }
 
 do_flash() {
@@ -156,6 +169,10 @@ while [[ $# -gt 0 ]]; do
         server)
             RUN_SERVER=1
             shift
+            ;;
+        pyrionctl)
+            shift
+            do_pyrionctl "$@"
             ;;
         logs)
             ATTACH_LOGS=1

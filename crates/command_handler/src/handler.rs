@@ -30,7 +30,7 @@ pub async fn execute_command(
             cells: logging::fault_register::FaultRegister::shared().snapshot(),
         }),
         Command::ResetFaults => {
-            logging::fault_register::FaultRegister::shared().reset();
+            logging::fault_register::FaultRegister::shared().clear_latched();
             Event::Success
         }
     }

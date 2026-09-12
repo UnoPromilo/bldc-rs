@@ -1,10 +1,14 @@
 #![no_std]
 
+#[cfg(test)]
+extern crate std;
+
 mod converters;
 mod core;
 mod io;
 pub mod state;
 pub mod strategy;
-pub use core::{control_step, update_strategy};
+pub use core::control_step;
 pub use io::*;
 pub mod command;
+pub mod output;

@@ -25,3 +25,20 @@ pub struct ConnectionResult {
     pub firmware: String,
     pub uid: String,
 }
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct FaultReport {
+    pub faults: Vec<FaultSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct FaultSummary {
+    #[serde(rename = "type")]
+    pub fault_type: String,
+    pub state: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ClearResolvedFaultsResult {
+    pub cleared: bool,
+}

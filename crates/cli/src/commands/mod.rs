@@ -1,5 +1,7 @@
+mod connection;
 mod device;
 mod devices;
+mod faults;
 
 use clap::Subcommand;
 
@@ -12,6 +14,8 @@ pub(crate) enum Command {
     Devices(devices::DevicesArgs),
     /// Interact with one Pyrion device.
     Device(device::DeviceArgs),
+    /// Inspect or clear device faults.
+    Faults(faults::FaultsArgs),
 }
 
 pub(crate) struct CommandContext {
@@ -33,6 +37,7 @@ impl Command {
         match self {
             Self::Devices(command) => command.execute(context).await,
             Self::Device(command) => command.execute(context).await,
+            Self::Faults(command) => command.execute(context).await,
         }
     }
 }

@@ -11,7 +11,10 @@ use tonic::transport::Channel;
 use tonic::{Code, Status};
 
 pub use error::ClientError;
-pub use model::{ClientConfig, ConnectionResult, DeviceSummary};
+pub use model::{
+    ClearResolvedFaultsResult, ClientConfig, ConnectionResult, DeviceSummary, FaultReport,
+    FaultSummary,
+};
 
 #[derive(Debug, Clone)]
 pub struct PyrionClient {

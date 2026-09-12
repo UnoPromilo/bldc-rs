@@ -3,7 +3,8 @@
 #![allow(clippy::bool_comparison)]
 
 use crate::version::populate_version;
-use cortex_m_rt::entry;
+use core::panic::PanicInfo;
+use cortex_m_rt::{entry, exception};
 use embassy_executor::{Executor, InterruptExecutor};
 use embassy_stm32::interrupt;
 use embassy_stm32::interrupt::{InterruptExt, Priority};
@@ -13,10 +14,10 @@ use user_config::UserConfig;
 mod app;
 mod version;
 
+#[allow(unused_imports)]
+use defmt_rtt as _;
 use hardware::usb::get_usb_config;
 use hardware::{BoardFlashBank1, BoardFlashBank2, BoardSerialNumber};
-#[allow(unused_imports)]
-use {defmt_rtt as _, panic_probe as _};
 
 static EXECUTOR_HIGH: InterruptExecutor = InterruptExecutor::new();
 static EXECUTOR_MED: InterruptExecutor = InterruptExecutor::new();
@@ -63,4 +64,20 @@ fn main() -> ! {
         low_priority_spawner
             .spawn(app::task_usb(board.usb, usb_config, flash_bank1, flash_bank2).unwrap());
     });
+}
+
+#[panic_handler]
+fn panic(_info: &PanicInfo) -> ! {
+    cortex_m::peripheral::SCB::sys_reset()
+}
+
+#[unsafe(no_mangle)]
+#[cfg_attr(target_os = "none", unsafe(link_section = ".HardFault.user"))]
+unsafe extern "C" fn HardFault() {
+    cortex_m::peripheral::SCB::sys_reset();
+}
+
+#[exception]
+unsafe fn DefaultHandler(_: i16) -> ! {
+    cortex_m::peripheral::SCB::sys_reset()
 }
