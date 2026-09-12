@@ -1,9 +1,8 @@
 #[cfg(feature = "freq-meter")]
 use crate::debug;
-use core::sync::atomic::Ordering;
+use core::sync::atomic::{AtomicU32, Ordering};
 #[cfg(feature = "freq-meter")]
 use embassy_time::{Duration, Instant};
-use portable_atomic::AtomicU32;
 
 #[cfg(feature = "freq-meter")]
 pub struct FreqMeter {

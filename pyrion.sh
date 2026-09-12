@@ -21,7 +21,21 @@ warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error()   { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MEMORY_LAYOUT_FILE="$SCRIPT_DIR/memory-layout.x"
 cd "$SCRIPT_DIR"
+
+active_image_max_bytes() {
+    local active_size_kib
+    active_size_kib=$(sed -nE \
+        's/^[[:space:]]*ACTIVE_SIZE[[:space:]]*=[[:space:]]*([0-9]+)K;[[:space:]]*$/\1/p' \
+        "$MEMORY_LAYOUT_FILE")
+
+    if [[ -z "$active_size_kib" ]]; then
+        error "Could not read ACTIVE_SIZE from $MEMORY_LAYOUT_FILE."
+    fi
+
+    echo $((active_size_kib * 1024))
+}
 
 if [[ ! -d "crates" ]]; then
     error "Could not find the 'crates' directory. Please place this script in the repository root."
@@ -94,6 +108,14 @@ do_dfu() {
       local bin_out="firmware.bin"
       info "Generating raw binary ($bin_out)..."
       cargo objcopy --release -- -O binary "$bin_out"
+
+      local bin_size
+      local max_size
+      bin_size=$(wc -c < "$bin_out" | tr -d '[:space:]')
+      max_size=$(active_image_max_bytes)
+      if (( bin_size > max_size )); then
+          error "Firmware image is ${bin_size} bytes; active slot allows ${max_size} bytes."
+      fi
 
       info "Flashing 'firmware' via DFU..."
       local dfu_output

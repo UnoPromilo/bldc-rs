@@ -1,6 +1,6 @@
 use core::sync::atomic::Ordering;
+use core::sync::atomic::{AtomicU8, AtomicUsize};
 use enum_iterator::{Sequence, all};
-use portable_atomic::{AtomicU8, AtomicUsize};
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -66,8 +66,7 @@ impl FaultRegister {
     }
 
     pub fn set(&self, e: FaultType) {
-        let prev = self.cells[idx(e)]
-            .swap(FaultState::Active as u8, Ordering::SeqCst);
+        let prev = self.cells[idx(e)].swap(FaultState::Active as u8, Ordering::SeqCst);
 
         match prev.into() {
             FaultState::Clean => {
@@ -256,10 +255,7 @@ mod tests {
     fn snapshot_should_return_all_clean_for_new_register() {
         let reg = fresh_register();
 
-        assert_eq!(
-            reg.snapshot(),
-            [FaultState::Clean; FaultType::CARDINALITY]
-        );
+        assert_eq!(reg.snapshot(), [FaultState::Clean; FaultType::CARDINALITY]);
     }
 
     #[test]
@@ -268,10 +264,7 @@ mod tests {
 
         reg.set(FaultType::Encoder);
 
-        assert_eq!(
-            reg.snapshot(),
-            [FaultState::Active]
-        );
+        assert_eq!(reg.snapshot(), [FaultState::Active]);
     }
 
     #[test]
@@ -281,10 +274,7 @@ mod tests {
         reg.set(FaultType::Encoder);
         reg.resolve_if_set(FaultType::Encoder);
 
-        assert_eq!(
-            reg.snapshot(),
-            [FaultState::Latched]
-        );
+        assert_eq!(reg.snapshot(), [FaultState::Latched]);
     }
 
     #[test]
@@ -294,10 +284,7 @@ mod tests {
         reg.set(FaultType::Encoder);
         reg.reset();
 
-        assert_eq!(
-            reg.snapshot(),
-            [FaultState::Clean]
-        );
+        assert_eq!(reg.snapshot(), [FaultState::Clean]);
     }
 
     #[test]

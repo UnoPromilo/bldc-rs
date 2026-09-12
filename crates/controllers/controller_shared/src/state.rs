@@ -1,4 +1,4 @@
-use portable_atomic::{AtomicU8, AtomicU16, AtomicU32};
+use core::sync::atomic::{AtomicU8, AtomicU16, AtomicU32};
 use units::AtomicUnit;
 
 pub struct State {

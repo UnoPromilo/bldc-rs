@@ -6,6 +6,7 @@ use defmt::info;
 use embassy_boot_stm32::*;
 use embassy_stm32::flash::{BANK1_REGION, WRITE_SIZE};
 use embassy_usb::Builder;
+use embedded_storage::nor_flash::ReadNorFlash;
 use hardware::configure_dfu_win_usb;
 use hardware::usb::{UsbBuffers, WinUsbExt, get_usb_config};
 
@@ -14,6 +15,7 @@ use crate::dfu::{new_state, usb_dfu};
 use defmt_rtt as _;
 
 mod dfu;
+mod image_size;
 
 #[entry]
 fn main() -> ! {
@@ -25,6 +27,7 @@ fn main() -> ! {
         &board.flash_bank1,
     );
     let active_offset = config.active.offset();
+    let active_size = config.active.capacity();
     let bl = BootLoader::prepare::<_, _, _, 8>(config);
 
     if bl.state == State::DfuDetach {
@@ -37,7 +40,7 @@ fn main() -> ! {
         let usb_config = get_usb_config(&board.serial_number);
         let mut usb_buffers = UsbBuffers::new();
         board.leds.green.set_high();
-        let mut dfu_state = new_state(updater, board.leds);
+        let mut dfu_state = new_state(updater, board.leds, active_size);
 
         let mut builder = Builder::new(
             board.usb,

@@ -3,10 +3,9 @@
 extern crate uom;
 
 use core::marker::PhantomData;
-use core::sync::atomic::Ordering;
-use portable_atomic::AtomicF32;
+use core::sync::atomic::{AtomicU32, Ordering};
 pub use uom::fmt::DisplayStyle;
-use uom::num::Float;
+use uom::num_traits::float::FloatCore;
 pub use uom::si;
 use uom::si::electric_current::ampere;
 use uom::si::electric_potential::volt;
@@ -41,31 +40,31 @@ impl_atomic_unit_type!(ElectricCurrent, ampere);
 impl_atomic_unit_type!(ThermodynamicTemperature, kelvin);
 
 pub struct AtomicUnit<T: F32UnitType> {
-    value: AtomicF32,
+    value: AtomicU32,
     _marker: PhantomData<T>,
 }
 
 impl<T: F32UnitType> AtomicUnit<T> {
     pub fn new(value: T) -> Self {
         Self {
-            value: AtomicF32::new(value.into_f32()),
+            value: AtomicU32::new(value.into_f32().to_bits()),
             _marker: PhantomData,
         }
     }
 
     pub const fn zero() -> Self {
         Self {
-            value: AtomicF32::new(0.0),
+            value: AtomicU32::new(0.0f32.to_bits()),
             _marker: PhantomData,
         }
     }
 
     pub fn store(&self, value: T, ordering: Ordering) {
-        self.value.store(value.into_f32(), ordering);
+        self.value.store(value.into_f32().to_bits(), ordering);
     }
 
     pub fn load(&self, ordering: Ordering) -> T {
-        T::from_f32(self.value.load(ordering))
+        T::from_f32(f32::from_bits(self.value.load(ordering)))
     }
 }
 
@@ -77,13 +76,13 @@ impl IntoRawDutyCycle for DutyCycle {
     #[inline(always)]
     fn into_raw_duty_cycle(self, max: u32) -> u32 {
         let max_f = max as f32;
-        (self.value * max_f).clamp(0f32, max_f).round() as u32
+        FloatCore::round((self.value * max_f).clamp(0f32, max_f)) as u32
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::AtomicUnit;
+    use crate::{AtomicUnit, F32UnitType};
     use core::sync::atomic::Ordering;
     use uom::si::electric_potential::volt;
     use uom::si::f32::ElectricPotential;
@@ -95,5 +94,16 @@ mod test {
         a.store(p, Ordering::Relaxed);
         let p2 = a.load(Ordering::Relaxed);
         assert_eq!(p, p2);
+    }
+
+    #[test]
+    fn atomic_unit_preserves_float_bits() {
+        let p = ElectricPotential::new::<volt>(-1.25);
+        let a = AtomicUnit::new(p);
+
+        assert_eq!(
+            a.load(Ordering::Relaxed).into_f32().to_bits(),
+            (-1.25f32).to_bits()
+        );
     }
 }

@@ -399,7 +399,6 @@ dependencies = [
  "embassy-sync",
  "embassy-time",
  "foc",
- "portable-atomic",
  "units",
 ]
 
@@ -1719,7 +1718,6 @@ dependencies = [
  "embassy-time",
  "enum-iterator",
  "log",
- "portable-atomic",
 ]
 
 [[package]]
@@ -2970,7 +2968,6 @@ checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 name = "units"
 version = "0.1.0"
 dependencies = [
- "portable-atomic",
  "uom",
 ]
 
