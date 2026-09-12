@@ -17,7 +17,7 @@ members = [
     "crates/user_config",
     "crates/bootloader",
     "crates/hardware"
-, "crates/led_manager"]
+, "crates/led_manager", "crates/settings"]
 resolver = "3"
 
 [profile.release]

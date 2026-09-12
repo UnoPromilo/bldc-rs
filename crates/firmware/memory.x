@@ -2,7 +2,8 @@ MEMORY
 {
     BOOTLOADER                        : ORIGIN = 0x08000000, LENGTH =  48K
     BOOTLOADER_STATE                  : ORIGIN = 0x0800C000, LENGTH =   8K
-    FLASH                             : ORIGIN = 0x0800E000, LENGTH = 200K
+    FLASH                             : ORIGIN = 0x0800E000, LENGTH = 196K
+    SETTINGS                          : ORIGIN = 0x0803E000, LENGTH =   4K
     DFU                               : ORIGIN = 0x08040000, LENGTH = 256K
     RAM   (rwx)                       : ORIGIN = 0x20000000, LENGTH = 128K
 }
@@ -12,3 +13,5 @@ __bootloader_state_end = ORIGIN(BOOTLOADER_STATE) + LENGTH(BOOTLOADER_STATE) - O
 
 __bootloader_dfu_start = ORIGIN(DFU) - ORIGIN(BOOTLOADER);
 __bootloader_dfu_end = ORIGIN(DFU) + LENGTH(DFU) - ORIGIN(BOOTLOADER);
+
+__settings_start = ORIGIN(SETTINGS) - ORIGIN(BOOTLOADER);

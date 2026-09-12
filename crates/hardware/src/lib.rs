@@ -8,3 +8,5 @@ mod serial_number;
 pub mod usb;
 
 pub use board::*;
+
+pub type FlashError = embassy_stm32::flash::Error;
