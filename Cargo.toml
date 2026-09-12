@@ -11,6 +11,7 @@ members = [
     "crates/controllers/controller_shared",
     "crates/utils/crc_engine",
     "crates/transport",
+    "crates/cli",
     "crates/server",
     "crates/command_handler",
     "crates/communication",

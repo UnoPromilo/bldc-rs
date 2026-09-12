@@ -140,7 +140,7 @@ impl Board<'static> {
                 Irqs,
             );
 
-            // TODO fix temperature sensor or remove it totally 
+            // TODO fix temperature sensor or remove it totally
             //let temp = adc5.enable_temperature();
             let adc5_running = adc5_configured.start(
                 [

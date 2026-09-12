@@ -13,10 +13,10 @@ use user_config::UserConfig;
 mod app;
 mod version;
 
+use hardware::usb::get_usb_config;
 use hardware::{BoardFlashBank1, BoardFlashBank2, BoardSerialNumber};
 #[allow(unused_imports)]
 use {defmt_rtt as _, panic_probe as _};
-use hardware::usb::get_usb_config;
 
 static EXECUTOR_HIGH: InterruptExecutor = InterruptExecutor::new();
 static EXECUTOR_MED: InterruptExecutor = InterruptExecutor::new();

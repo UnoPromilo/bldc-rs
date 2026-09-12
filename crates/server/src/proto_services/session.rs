@@ -5,6 +5,7 @@ use crate::features::session::DeviceHandleWrapper;
 use crate::proto::pyrion::v1 as pyrion_v1;
 use crate::proto::pyrion::v1::controller_message::ControllerMessage;
 use crate::proto::pyrion::v1::controller_message::controller_message::Payload as ControllerMessagePayload;
+use crate::proto::pyrion::v1::device_message;
 use crate::proto::pyrion::v1::device_message::device_message::Payload as DeviceMessagePayload;
 use crate::proto::pyrion::v1::device_message::{DeviceIntroduction, DeviceMessage, Telemetry};
 use logging::fault_register;
@@ -19,7 +20,6 @@ use transport::Command;
 use transport::command::{FIRMWARE_BLOCK_MAX_DATA_SIZE, FirmwareBlock};
 use transport::event::Event;
 use uuid::Uuid;
-use crate::proto::pyrion::v1::device_message;
 
 #[derive(Debug)]
 pub struct DeviceSessionService {
@@ -209,14 +209,10 @@ fn map_event_to_proto(event: Event) -> DeviceMessage {
             })),
         },
         Event::Success => DeviceMessage {
-            payload: Some(DeviceMessagePayload::Success(
-                device_message::Success {},
-            )),
+            payload: Some(DeviceMessagePayload::Success(device_message::Success {})),
         },
         Event::Failure => DeviceMessage {
-            payload: Some(DeviceMessagePayload::Failure(
-                device_message::Failure {},
-            )),
+            payload: Some(DeviceMessagePayload::Failure(device_message::Failure {})),
         },
         Event::FaultRegister(error_register) => DeviceMessage {
             payload: Some(DeviceMessagePayload::FaultRegister(
@@ -226,27 +222,33 @@ fn map_event_to_proto(event: Event) -> DeviceMessage {
                         .filter_map(|(i, err)| {
                             let value = error_register.cells[i];
                             let mapped_error = match err {
-                                fault_register::FaultType::Encoder => device_message::FaultType::Encoder,
+                                fault_register::FaultType::Encoder => {
+                                    device_message::FaultType::Encoder
+                                }
                             };
 
                             match value {
                                 fault_register::FaultState::Clean => None,
 
-                                fault_register::FaultState::Active => Some(device_message::FaultEntry {
-                                    r#type: mapped_error as i32,
-                                    state: device_message::FaultState::Active as i32,
-                                }),
+                                fault_register::FaultState::Active => {
+                                    Some(device_message::FaultEntry {
+                                        r#type: mapped_error as i32,
+                                        state: device_message::FaultState::Active as i32,
+                                    })
+                                }
 
-                                fault_register::FaultState::Latched => Some(device_message::FaultEntry {
-                                    r#type: mapped_error as i32,
-                                    state: device_message::FaultState::Latched as i32,
-                                }),
+                                fault_register::FaultState::Latched => {
+                                    Some(device_message::FaultEntry {
+                                        r#type: mapped_error as i32,
+                                        state: device_message::FaultState::Latched as i32,
+                                    })
+                                }
                             }
                         })
                         .collect(),
                 },
             )),
-        }
+        },
     }
 }
 
@@ -275,7 +277,7 @@ fn map_proto_to_command(message: ControllerMessage) -> Result<Command, CommandMa
             }
             ControllerMessagePayload::FinalizeFirmwareUpdate(_) => {
                 Ok(Command::FinalizeFirmwareUpdate)
-            },
+            }
             ControllerMessagePayload::ReportFaults(_) => Ok(Command::ReportFaults),
             ControllerMessagePayload::ResetFaults(_) => Ok(Command::ResetFaults),
         })

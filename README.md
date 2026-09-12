@@ -22,6 +22,19 @@ A host-side server application that communicates with the ESC hardware. It has a
 discovery and communication. Check out the [proto definitions](https://github.com/UnoPromilo/pyrion-proto) for more
 information.
 
+### Test CLI (`crates/cli`)
+
+`pyrionctl` is a gRPC-only development client. With the server running:
+
+```bash
+cargo run -p pyrion-cli -- devices list
+cargo run -p pyrion-cli -- device connect
+```
+
+The connect command discovers the only attached device, opens a session, reads
+its firmware version and UID, and disconnects. Pass `--connection` when multiple
+devices are available and `--output json` for automation.
+
 ---
 
 ## Running the Server

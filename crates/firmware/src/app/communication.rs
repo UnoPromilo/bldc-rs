@@ -15,7 +15,7 @@ pub async fn task_communication(mut crc: BoardCrc<'static>) {
         &COMMAND_CHANNEL,
         &EVENT_CHANNEL,
         &CONTROL_COMMAND_CHANNEL,
-        &mut crc
+        &mut crc,
     )
     .await;
 }

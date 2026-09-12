@@ -1,6 +1,6 @@
-use core::cell::RefCell;
 #[cfg(feature = "full")]
 use adc::{Adc, Continuous, Taken};
+use core::cell::RefCell;
 #[cfg(feature = "full")]
 use crc_engine::hardware::HardwareCrcEngine;
 #[cfg(feature = "full")]
@@ -23,8 +23,8 @@ use embassy_stm32::usart::Uart;
 use embassy_stm32::usb;
 #[cfg(feature = "full")]
 use embassy_stm32::{i2c, spi, usb};
-use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::blocking_mutex::Mutex;
+use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 #[cfg(feature = "full")]
 use inverter::Inverter;
 

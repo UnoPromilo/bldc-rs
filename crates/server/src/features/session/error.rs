@@ -10,8 +10,12 @@ impl From<std::io::Error> for DecoderError {
     }
 }
 
-impl From<transport::decoder::DecoderError<transport::event::EventDeserializationError>> for DecoderError {
-    fn from(e: transport::decoder::DecoderError<transport::event::EventDeserializationError>) -> Self {
+impl From<transport::decoder::DecoderError<transport::event::EventDeserializationError>>
+    for DecoderError
+{
+    fn from(
+        e: transport::decoder::DecoderError<transport::event::EventDeserializationError>,
+    ) -> Self {
         Self::DecodeError(e)
     }
 }

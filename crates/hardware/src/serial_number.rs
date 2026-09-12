@@ -1,5 +1,5 @@
 pub fn get_serial_number_as_hex() -> [u8; 24] {
-   let uid = embassy_stm32::uid::uid();
+    let uid = embassy_stm32::uid::uid();
     fn hex(n: u8) -> u8 {
         b"0123456789abcdef"[n as usize]
     }

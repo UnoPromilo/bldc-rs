@@ -1,17 +1,14 @@
+use crate::app::communication::CONTROL_COMMAND_CHANNEL;
 use controller_shared::strategy::ControlStrategy;
-use controller_shared::{control_step, update_strategy, RawSnapshot};
+use controller_shared::{RawSnapshot, control_step, update_strategy};
 use core::sync::atomic::Ordering;
 use embassy_futures::join::join5;
-use embassy_time::{with_timeout, Duration, Instant};
+use embassy_time::{Duration, Instant, with_timeout};
 use hardware::{BoardAdc, BoardInverter};
 use logging::FreqMeter;
-use crate::app::communication::CONTROL_COMMAND_CHANNEL;
 
 #[embassy_executor::task]
-pub async fn task_adc(
-    adc: BoardAdc<'static>,
-    mut inverter: BoardInverter<'static>,
-) {
+pub async fn task_adc(adc: BoardAdc<'static>, mut inverter: BoardInverter<'static>) {
     let adc_1 = adc.adc1_running;
     let adc_2 = adc.adc2_running;
     let adc_3 = adc.adc3_running;
